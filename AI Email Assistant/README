@@ -1,6 +1,0 @@
-# 📧 AI Email Assistant (n8n)
-
-An automated **AI-powered email triage assistant** built in [n8n](https://n8n.io). It watches a shared inbox, summarises every incoming email with GPT, drafts a ready-to-send reply, and lets an employee decide what happens next — **bin it, forward it, or respond** — all from a single email with a built-in form. Every handled enquiry is logged to Airtable for a full audit trail.
-
-> Built as a portfolio project to demonstrate practical workflow automation, AI integration, and human-in-the-loop design.
-
