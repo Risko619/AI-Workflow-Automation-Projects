@@ -61,7 +61,7 @@ New Email Arrives
 
 1. Clone this repo:
    ```bash
-   git clone https://github.com/your-username/ai-email-assistant.git
+   git clone https://github.com/Risko619/ai-email-assistant.git
    ```
 2. Import the workflow JSON into your n8n instance.
 3. Add your credentials in n8n:
