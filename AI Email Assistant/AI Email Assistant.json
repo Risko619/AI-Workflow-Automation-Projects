@@ -1,0 +1,530 @@
+{
+  "name": "AI Email Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "id": "931c76d4-96ac-404a-90ad-971c4d49b426",
+      "name": "New Email Received",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        192
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "74jk5I8x3OfcoMVn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an executive email assistant. Summarize the email in 3-4 concise bullet points, then state on a new line whether it looks URGENT or NOT URGENT and why. Be brief and factual."
+            },
+            {
+              "content": "=From: {{ $json.from.text || $json.from }}\nSubject: {{ $json.subject }}\nDate: {{ $json.date }}\n\nBody:\n{{ $json.text || $json.snippet }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 400
+        }
+      },
+      "id": "74f32cf3-2b86-4a87-81a8-25138291c97d",
+      "name": "Summarize Email",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        192
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YqWHDbxA37lc1NVS",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an email-writing assistant. Draft a clear, professional reply to the email below on behalf of the employee. Return only the body of the reply, ready to send."
+            },
+            {
+              "content": "=Original email from {{ $(\"New Email Received\").item.json.from.text || $(\"New Email Received\").item.json.from }} (subject: {{ $(\"New Email Received\").item.json.subject }}):\n\n{{ $(\"New Email Received\").item.json.text || $(\"New Email Received\").item.json.snippet }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 600
+        }
+      },
+      "id": "024b1356-0173-48c5-bd5f-a37bd7351e89",
+      "name": "Draft Suggested Reply",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        192
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YqWHDbxA37lc1NVS",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "leroy.bonsu@kingsplace.co.uk",
+        "subject": "=Action needed: {{ $(\"New Email Received\").item.json.subject }}",
+        "message": "=<b>Original email from {{ $(\"New Email Received\").item.json.from.text || $(\"New Email Received\").item.json.from }}</b><br>Subject: {{ $(\"New Email Received\").item.json.subject }}<br><br>{{ ($(\"New Email Received\").item.json.html || $(\"New Email Received\").item.json.text || \"\").toString().split(\"\\n\").join(\"<br>\") }}<br><br><hr><br><b>AI summary</b><br><br>{{ ($(\"Summarize Email\").item.json.output[0].content[0].text || \"\").toString().split(\"\\n\\n\")[0].split(\"\\n\").join(\"<br>\") }}<br><br><b>{{ ($(\"Summarize Email\").item.json.output[0].content[0].text || \"\").toString().split(\"\\n\\n\").slice(1).join(\" \").split(\":\")[0] }}:</b>{{ ($(\"Summarize Email\").item.json.output[0].content[0].text || \"\").toString().split(\"\\n\\n\").slice(1).join(\" \").split(\":\").slice(1).join(\":\") }}<br><br><b>Open the form</b> below to choose what to do. If you decide to respond, a suggested reply is pre-filled for you to edit.",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "What should happen to this email",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Bin (delete it, it is trash)"
+                  },
+                  {
+                    "option": "Forward to a manager / another department"
+                  },
+                  {
+                    "option": "Respond (send the reply below)"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Forward to (email address, only if forwarding)",
+              "fieldType": "email"
+            },
+            {
+              "fieldLabel": "Suggested reply (edit before sending)",
+              "fieldType": "textarea",
+              "defaultValue": "={{ $(\"Draft Suggested Reply\").item.json.output[0].content[0].text }}"
+            }
+          ]
+        },
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 2,
+              "resumeUnit": "days"
+            }
+          }
+        }
+      },
+      "id": "64932511-fe5d-469a-8dc6-09c272f10bc4",
+      "name": "Ask Employee: Decision",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        192
+      ],
+      "webhookId": "21d7b8e7-1413-449c-8e64-70806cbb681b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "74jk5I8x3OfcoMVn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data[\"What should happen to this email\"] }}",
+                    "rightValue": "Bin (delete it, it is trash)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "bin"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data[\"What should happen to this email\"] }}",
+                    "rightValue": "Forward to a manager / another department",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "forward"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data[\"What should happen to this email\"] }}",
+                    "rightValue": "Respond (send the reply below)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "respond"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3fc9ea4a-7df0-4a68-9f19-4ccd3d1a6238",
+      "name": "Route Chosen Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "trash",
+        "threadId": "={{ $(\"New Email Received\").item.json.threadId }}"
+      },
+      "id": "3aa69a36-296c-4ad7-a70b-1b0910e0c5f9",
+      "name": "Bin Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        0
+      ],
+      "webhookId": "4ea3be6a-e7b9-4468-9bb0-0d9c099f3989",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "74jk5I8x3OfcoMVn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(\"Ask Employee: Decision\").item.json.data[\"Forward to (email address, only if forwarding)\"] }}",
+        "subject": "=Fwd: {{ $(\"New Email Received\").item.json.subject }}",
+        "message": "=This email was forwarded to you for your attention.<br><br><b>AI summary:</b><br>{{ $(\"Summarize Email\").item.json.output[0].content[0].text }}<br><br><b>Original message from {{ $(\"New Email Received\").item.json.from.text || $(\"New Email Received\").item.json.from }}:</b><br><br>{{ $(\"New Email Received\").item.json.html || $(\"New Email Received\").item.json.text }}",
+        "options": {}
+      },
+      "id": "4834c1f5-65ce-43a9-a8ac-8ac48614e4a4",
+      "name": "Forward Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        192
+      ],
+      "webhookId": "b7e8ec34-25dd-4efd-8308-4df58f9afbb1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "74jk5I8x3OfcoMVn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $(\"New Email Received\").item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $(\"Ask Employee: Decision\").item.json.data[\"Suggested reply (edit before sending)\"] }}",
+        "options": {
+          "replyToSenderOnly": true
+        }
+      },
+      "id": "89a45cd9-f92d-4824-bf0b-661d5a82ff60",
+      "name": "Send Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        384
+      ],
+      "webhookId": "f238dfff-a7e7-40e2-9b15-092217dc7142",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "74jk5I8x3OfcoMVn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "name",
+              "name": "Name",
+              "type": "string",
+              "value": "={{ $(\"New Email Received\").item.json.from.value ? ($(\"New Email Received\").item.json.from.value[0].name || $(\"New Email Received\").item.json.from.value[0].address) : $(\"New Email Received\").item.json.from }}"
+            },
+            {
+              "id": "email",
+              "name": "Email",
+              "type": "string",
+              "value": "={{ $(\"New Email Received\").item.json.from.value ? $(\"New Email Received\").item.json.from.value[0].address : $(\"New Email Received\").item.json.from }}"
+            },
+            {
+              "id": "date",
+              "name": "Date",
+              "type": "string",
+              "value": "={{ $(\"New Email Received\").item.json.date }}"
+            },
+            {
+              "id": "enquiry",
+              "name": "Enquiry",
+              "type": "string",
+              "value": "={{ $(\"Summarize Email\").item.json.output[0].content[0].text }}"
+            },
+            {
+              "id": "response",
+              "name": "Response",
+              "type": "string",
+              "value": "={{ $(\"Ask Employee: Decision\").item.json.data[\"Suggested reply (edit before sending)\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1b96ae1b-3b18-4d1b-81b6-6e00c358b9a2",
+      "name": "Build Log Row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1344,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "list",
+          "value": "appMJUjV7rQWXwEHs",
+          "cachedResultName": "n8n"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tblUDkQ3cgrtiDxxa",
+          "cachedResultName": "Table 1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.Name }}",
+            "Email": "={{ $json.Email }}",
+            "Date": "={{ $json.Date }}",
+            "Enquiry": "={{ $json.Enquiry }}",
+            "Response": "={{ $json.Response }}"
+          }
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "aa2044c8-69a0-4f4d-9c6c-95ee28fa2ab0",
+      "name": "Log to Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        384
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "26cEW8AoDtIJ0LTH",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Email Received": {
+      "main": [
+        [
+          {
+            "node": "Summarize Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Email": {
+      "main": [
+        [
+          {
+            "node": "Draft Suggested Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Suggested Reply": {
+      "main": [
+        [
+          {
+            "node": "Ask Employee: Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Employee: Decision": {
+      "main": [
+        [
+          {
+            "node": "Route Chosen Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Chosen Action": {
+      "main": [
+        [
+          {
+            "node": "Bin Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Forward Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply": {
+      "main": [
+        [
+          {
+            "node": "Build Log Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log Row": {
+      "main": [
+        [
+          {
+            "node": "Log to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "affe75c3-68c0-4853-a190-1cf7ddcc02f2",
+  "meta": {
+    "instanceId": "cc9896fe399fea726276aedda030571643b8ba67ade41b986f6e5ae6d8710a46"
+  },
+  "nodeGroups": [],
+  "id": "PhmAIh819tcwpzk9",
+  "tags": []
+}
