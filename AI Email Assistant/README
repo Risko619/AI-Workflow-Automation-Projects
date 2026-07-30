@@ -1,0 +1,98 @@
+# 📧 AI Email Assistant (n8n)
+
+An automated **AI-powered email triage assistant** built in [n8n](https://n8n.io). It watches a shared inbox, summarises every incoming email with GPT, drafts a ready-to-send reply, and lets an employee decide what happens next — **bin it, forward it, or respond** — all from a single email with a built-in form. Every handled enquiry is logged to Airtable for a full audit trail.
+
+> Built as a portfolio project to demonstrate practical workflow automation, AI integration, and human-in-the-loop design.
+
+## 📌 About
+
+Shared inboxes are noisy — most incoming mail needs the same three decisions: ignore it, pass it on, or reply. This workflow automates the repetitive part (reading, summarising, drafting) while keeping a human firmly in control of the final action.
+
+## ✨ Features
+
+- 📥 **Inbox monitoring** — watches a shared mailbox for new mail in real time
+- 🤖 **AI summarisation** — GPT condenses each email into a quick-read summary
+- ✍️ **Auto-drafted replies** — a ready-to-send response is generated for every enquiry
+- ✅ **Human-in-the-loop** — one email with an embedded form lets a person **bin, forward, or respond** with a single click
+- 🗂️ **Audit trail** — every handled enquiry is logged to Airtable for tracking and accountability
+
+## 🛠️ Tech Stack
+
+| Tool | Role |
+|---|---|
+| [n8n](https://n8n.io) | Workflow orchestration |
+| GPT (OpenAI) | Email summarisation & reply drafting |
+| Email (IMAP/SMTP or provider node) | Inbox monitoring & sending |
+| [Airtable](https://airtable.com) | Logging & audit trail |
+
+## 🔄 How It Works
+
+```
+New Email Arrives
+        │
+        ▼
+ GPT Summarises Email
+        │
+        ▼
+ GPT Drafts Reply
+        │
+        ▼
+ Notification Sent to Employee
+ (with summary + draft + action form)
+        │
+        ▼
+   Employee Chooses:
+   🗑️ Bin   ➡️ Forward   ✅ Respond
+        │
+        ▼
+  Action Executed + Logged to Airtable
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- An [n8n](https://n8n.io) instance (self-hosted or cloud)
+- An OpenAI API key
+- An email account with IMAP/SMTP access (or supported provider credentials)
+- An Airtable account with a base set up for logging
+
+### Setup
+
+1. Clone this repo:
+   ```bash
+   git clone https://github.com/your-username/ai-email-assistant.git
+   ```
+2. Import the workflow JSON into your n8n instance.
+3. Add your credentials in n8n:
+   - Email (IMAP/SMTP)
+   - OpenAI
+   - Airtable
+4. Update the Airtable base/table IDs to match your own setup.
+5. Activate the workflow.
+
+## 📋 Example Use Case
+
+A customer support inbox receives dozens of enquiries a day. Instead of an employee reading each one from scratch, they receive a single notification containing:
+
+- A short AI-generated summary
+- A drafted reply, ready to edit or send
+- Three buttons: **Bin**, **Forward**, **Respond**
+
+One click handles the enquiry — and it's automatically logged for future reference.
+
+## 🎯 Why This Project
+
+This workflow was built to demonstrate:
+
+- Practical, real-world AI integration (not just a chatbot demo)
+- Human-in-the-loop design that keeps people in control of AI output
+- End-to-end automation thinking — trigger, processing, decision, logging
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## 🙋 Contact
+
+Feel free to reach out or open an issue with feedback or suggestions.
